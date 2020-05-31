@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-//import 'package:webfeed/domain/atom_feed.dart';
+
 
 class Home extends StatefulWidget {
   Home({Key key, this.title}) : super(key: key);
@@ -74,9 +74,8 @@ updateFeed(feed){
       );
       return;
     }
-    updateTitle(title);
+  //  updateTitle(title);
   }
-
 
 Future load() async {
    updateTitle(loadingFeedMsg);
@@ -86,7 +85,7 @@ Future load() async {
       return;
     } else {
       updateFeed(result);
-      updateTitle(result.title);
+     // updateTitle(result.title);
     }
   });
 }
@@ -113,13 +112,18 @@ isFeeEmpty(){
 }
 
 body(){
+  Orientation orientation = MediaQuery.of(context).orientation;
+
   return isFeeEmpty() ? Center(
     child: CircularProgressIndicator(),
   ) : RefreshIndicator(
-    child: listeNews(),
+    child: (orientation == Orientation.portrait) ? listeNews() : gridNews(),
     onRefresh: () => load(),
   );
 }
+
+
+// Function du calcul de la diffrence de date
 
  calculerDiffDate(valDate) {
    var string = valDate;
@@ -146,16 +150,27 @@ body(){
 
   @override
   Widget build(BuildContext context) {
+    Orientation orientation = MediaQuery.of(context).orientation;
+    print(orientation);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         backgroundColor: Colors.blue[880],
         centerTitle: true,
+        actions: <Widget>[
+          new IconButton(
+               icon: const Icon(Icons.refresh, color: Colors.white),
+               onPressed: ()=>load(),
+               iconSize: 33.0,
+            ),
+        ],
       ),
       body: body()
     );
   }
 
+
+  // Affichage en portrait
   Widget listeNews() {
    double width = MediaQuery.of(context).size.width;
    double height = MediaQuery.of(context).size.height;
@@ -235,14 +250,103 @@ body(){
                 ),
               )
           );
-
        },
      itemCount: _feed.items.length,
 
    );
   }
 
+  // Affichage en mode landscape
 
+  Widget gridNews() {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+   return new GridView.builder(
+       gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+     itemBuilder: (context, i){
+       _rssItem = _feed.items[i];
+       String key = _feed.items[i].title;
+       return new Dismissible(
+           key: new Key(i.toString()),
+           child: new Container(
+             padding: EdgeInsets.only(left: 5.0, top: 1.0, right: 5.0, bottom: 1.0),
+             height: 200,
+             child: new Card(
+               elevation: 7.5,
+               child: new InkWell(
+                 onTap: (()=>openFeed(_feed.items[i].link)),
+                 child: new Column(
+                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                   children: <Widget>[
+                     new Container(
+                       margin: EdgeInsets.only(top: 15.0),
+                       child: new Row(
+                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                         children: <Widget>[
+                           new Text(
+                             (_rssItem.dc.creator != null) ? _rssItem.dc.creator : "Author" ,
+                             textAlign: TextAlign.left,
+                             style: new TextStyle(color: Colors.blue, fontSize: 14.0),
+                           ),
+                           new Container(
+                             width: width/8,
+                           ),
+                           new Text(
+                             calculerDiffDate(_rssItem.pubDate != null ? _rssItem.pubDate: new  DateTime.now()),
+                             textAlign: TextAlign.right,
+                             style:  new TextStyle(
+                                 color: Colors.pinkAccent,
+                                 fontSize: 14
+
+                             ),
+                           )
+                         ],
+                       ),
+                     ),
+                     new Container(
+                       margin: EdgeInsets.only(top: 5.0),
+                       child: new Column(
+                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                         children: <Widget>[
+                           new Card(
+                             borderOnForeground: true,
+                             elevation: 7.5,
+                             child: new Container(
+                               width: width/2.4,
+                               height: height/2.1,
+                               child: new Image.network(
+                                 _rssItem.enclosure.url,
+                                 fit: BoxFit.cover,
+                               ),
+                             ),
+                           ),
+                           new Container( width: 10,),
+                           new Container(
+
+                             width: width/2,
+                             // height: 100,
+                             padding: EdgeInsets.only(right: 12, left: 12, bottom: 10),
+                             child: new Text(
+                               _rssItem.description.substring(0, 100),
+                               textAlign: TextAlign.center,
+                               style: new TextStyle(color: Colors.blue[400], fontSize: 15.0),
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+             ),
+           )
+       );
+
+     },
+     itemCount: _feed.items.length,
+
+   );
+  }
 
 
 
