@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: Home(title: 'Coda Flux'),
+      home: Home(title: 'Fab Flux News'),
     );
   }
 }
